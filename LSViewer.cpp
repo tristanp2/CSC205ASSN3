@@ -163,8 +163,6 @@ private:
         init_transform.identity();
         init_transform *= Translation(WINDOW_SIZE_X/(num_trees + 1), WINDOW_SIZE_Y);
         init_transform *= Scale(init_scale_x, -init_scale_y);
-        cout<<WINDOW_SIZE_X/(num_trees+1)<<endl;
-        cout<<WINDOW_SIZE_Y<<endl<<endl;
 		
         for(unsigned int i=0; i<num_trees; i++){  
             while(!t_stack.empty()) t_stack.pop();
