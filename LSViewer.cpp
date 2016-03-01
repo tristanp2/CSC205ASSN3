@@ -16,16 +16,19 @@
 
 using namespace std;
 
-static const int WINDOW_SIZE_X = 800;
-static const int WINDOW_SIZE_Y = 600;
+static const int DEFAULT_SIZE_X = 800;
+static const int DEFAULT_SIZE_Y = 600;
 
 
 class A3Canvas{
 public:
     float *leaf_vx,*leaf_vy;
     static const unsigned int leaf_verts = 8;
+    int WINDOW_SIZE_X, WINDOW_SIZE_Y;
     
 	A3Canvas(LSystem* L){
+        WINDOW_SIZE_X = DEFAULT_SIZE_X;
+        WINDOW_SIZE_Y = DEFAULT_SIZE_Y;
 		float vx[] = {0,1.0 ,1.25,   1,  0,  -1,-1.25,-1};
 		float vy[] = {0,0.75,1.75,2.75,4.0,2.75, 1.75,0.75};
 		LS_iterations = 0;
@@ -36,11 +39,11 @@ public:
             leaf_vx[i] = vx[i];
             leaf_vy[i] = vy[i];
         }
-        forest = false;
+        num_trees = 1;
 	}
 
 	
-	void frame_loop(SDL_Renderer* r){
+	void frame_loop(SDL_Renderer* r, SDL_Window* w){
 		unsigned int last_frame = SDL_GetTicks();
 		//unsigned int frame_number = 0;
 		draw(r,0);
@@ -61,6 +64,12 @@ public:
 						handle_key_down(e.key.keysym.sym);
 						draw(r,delta_ms);
 						break;
+                    case SDL_WINDOWEVENT:
+                        if(resized(e.window)){
+                            SDL_RenderPresent(r);
+                            draw(r,delta_ms);
+                        }
+                        break;
 					default:
 						break;
 				}
@@ -72,8 +81,7 @@ public:
 		
 	}
 private:
-	int LS_iterations;
-    bool forest;
+	int LS_iterations, num_trees;
 	LSystem* L_system;
 	void handle_key_down(SDL_Keycode key){
 		if (key == SDLK_UP){
@@ -83,10 +91,22 @@ private:
 			if (LS_iterations < 0)
 				LS_iterations = 0;
 		}
-        else if(key == SDLK_f){
-            forest = !forest;
+        else if(key == SDLK_RIGHT){
+            num_trees++;
+        }
+        else if(key == SDLK_LEFT){
+            num_trees--;
+            if(num_trees < 1)   num_trees = 1;
         }
 	}
+    bool resized(SDL_WindowEvent e){
+        if(e.event == SDL_WINDOWEVENT_SIZE_CHANGED){
+            WINDOW_SIZE_X = e.data1;
+            WINDOW_SIZE_Y = e.data2;
+            return true;
+        }
+        else return false;
+    }
 	
 	
 	inline Matrix3 Rotation(float radians){
@@ -128,31 +148,27 @@ private:
 		//float frame_delta_seconds = frame_delta_ms/1000.0;
 
 		string ls_string = L_system->GenerateSystemString(LS_iterations);
-		cerr << "Drawing with " << LS_iterations << " iterations." << endl;
+		//cerr << "Drawing with " << LS_iterations << " iterations." << endl;
 		//cerr << "System string: " << ls_string << endl;
 
 		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 		SDL_RenderClear(renderer);
-
+        double window_scale_x = WINDOW_SIZE_X / (double)DEFAULT_SIZE_X;
+        double window_scale_y = WINDOW_SIZE_Y / (double)DEFAULT_SIZE_Y;
+        double init_scale_x = 6*window_scale_x / double(num_trees/2 + 1);
+        double init_scale_y = 6*window_scale_y / double(num_trees/2 + 1);
 		TransformedRenderer tr(renderer);
 		Matrix3 transform, init_transform;
 		transform.identity();
         init_transform.identity();
-        unsigned int num_trees = 1;
-        if(forest){
-            num_trees = 10;
-            init_transform *= Translation(WINDOW_SIZE_X/11, WINDOW_SIZE_Y);
-            init_transform *= Scale(3, -3);
-        }
-        else{
-            init_transform *= Translation(WINDOW_SIZE_X/2, WINDOW_SIZE_Y);
-            init_transform *= Scale(3,-3);
-        }
+        init_transform *= Translation(WINDOW_SIZE_X/(num_trees + 1), WINDOW_SIZE_Y);
+        init_transform *= Scale(init_scale_x, -init_scale_y);
+        cout<<WINDOW_SIZE_X/(num_trees+1)<<endl;
+        cout<<WINDOW_SIZE_Y<<endl<<endl;
 		
         for(unsigned int i=0; i<num_trees; i++){  
             while(!t_stack.empty()) t_stack.pop();
-            transform = init_transform * Translation(i*WINDOW_SIZE_X/33,0);
-          //  if(i==0) cout<<"------\n";
+            transform = init_transform * Translation(i*WINDOW_SIZE_X/(init_scale_x*(num_trees+1)),0);
             tr.set_transform(transform);
             for(unsigned int j=0; j<ls_string.size(); j++){
                 switch(ls_string[j]){
@@ -160,9 +176,7 @@ private:
                             draw_leaf(tr);
                             break;
                         case 'T':
-                            cout<<"before branch\n";
                             draw_stem(tr);
-                            tr.get_transform().print();
                             transform *= Translation(0,6);
                             break;
                         case '+':
@@ -200,18 +214,8 @@ private:
                             break;
                 }
                 tr.set_transform(transform);
-                if(ls_string[j]=='T') {
-                    cout<<"after branch\n";
-                    tr.get_transform().print();
-                }
-                if(i==0){
-     //               cout<<"transform: "<<ls_string[j]<<endl;
-       //             transform.print();
-         //           cout<<endl;
-                }
             }
         }
-        cout<<"------"<<endl;
 		
 	
 		SDL_RenderPresent(renderer);
@@ -234,8 +238,8 @@ int main(int argc, char** argv){
 
 	SDL_Window* window = SDL_CreateWindow("CSC 205 A3",
                               SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-                              WINDOW_SIZE_X, WINDOW_SIZE_Y, 
-							  SDL_WINDOW_SHOWN);
+                              DEFAULT_SIZE_X, DEFAULT_SIZE_Y, 
+							  SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
 							  
 	SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, 0/*SDL_RENDERER_PRESENTVSYNC | SDL_RENDERER_ACCELERATED*/);
 
@@ -246,7 +250,7 @@ int main(int argc, char** argv){
 	
 	A3Canvas canvas(L);
 
-	canvas.frame_loop(renderer);
+	canvas.frame_loop(renderer, window);
 	
 	delete L;
 	

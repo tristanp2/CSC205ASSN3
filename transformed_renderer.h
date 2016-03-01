@@ -30,7 +30,9 @@ public:
 	TransformedRenderer(SDL_Renderer* renderer){
 		this->renderer = renderer;
 	}
-	
+    void set_renderer(SDL_Renderer* r){
+        this->renderer = r;
+    }    
 	void set_transform(Matrix3& newTransform){
 		this->transform = newTransform;
 	}
