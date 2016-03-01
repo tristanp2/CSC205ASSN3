@@ -157,6 +157,8 @@ private:
         double window_scale_y = WINDOW_SIZE_Y / (double)DEFAULT_SIZE_Y;
         double init_scale_x = 6*window_scale_x / double(num_trees/2 + 1);
         double init_scale_y = 6*window_scale_y / double(num_trees/2 + 1);
+        if(init_scale_x < 1) init_scale_x = 1;
+        if(init_scale_y < 1) init_scale_y = 1;
 		TransformedRenderer tr(renderer);
 		Matrix3 transform, init_transform;
 		transform.identity();
