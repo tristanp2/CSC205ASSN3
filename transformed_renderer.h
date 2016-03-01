@@ -34,6 +34,9 @@ public:
 	void set_transform(Matrix3& newTransform){
 		this->transform = newTransform;
 	}
+    Matrix3 get_transform(){
+        return transform;
+    }
 	
 	void drawLine(float x1, float y1, float x2, float y2, Uint8 width, Uint8 r, Uint8 g, Uint8 b, Uint8 a){
 		Sint16 ix1,iy1,ix2,iy2;
@@ -85,7 +88,6 @@ public:
 		
 		Sint16* new_vx = ALLOCATE_SINT16_ARRAY(n);
 		Sint16* new_vy = ALLOCATE_SINT16_ARRAY(n);
-		
 		for(int i = 0; i < n; i++)
 			TransformVector(vx[i], vy[i], new_vx[i],new_vy[i]);
 		

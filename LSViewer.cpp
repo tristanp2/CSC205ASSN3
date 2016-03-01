@@ -140,26 +140,29 @@ private:
         init_transform.identity();
         unsigned int num_trees = 1;
         if(forest){
-            num_trees = 11;
+            num_trees = 10;
             init_transform *= Translation(WINDOW_SIZE_X/11, WINDOW_SIZE_Y);
             init_transform *= Scale(3, -3);
         }
         else{
             init_transform *= Translation(WINDOW_SIZE_X/2, WINDOW_SIZE_Y);
-            init_transform *= Scale(6,-6);
+            init_transform *= Scale(3,-3);
         }
 		
-		tr.set_transform(init_transform);
-	    
-        for(unsigned int i=0; i<num_trees; i++){    
+        for(unsigned int i=0; i<num_trees; i++){  
+            while(!t_stack.empty()) t_stack.pop();
             transform = init_transform * Translation(i*WINDOW_SIZE_X/33,0);
+          //  if(i==0) cout<<"------\n";
+            tr.set_transform(transform);
             for(unsigned int j=0; j<ls_string.size(); j++){
                 switch(ls_string[j]){
                         case 'L':
                             draw_leaf(tr);
                             break;
                         case 'T':
+                            cout<<"before branch\n";
                             draw_stem(tr);
+                            tr.get_transform().print();
                             transform *= Translation(0,6);
                             break;
                         case '+':
@@ -197,8 +200,18 @@ private:
                             break;
                 }
                 tr.set_transform(transform);
+                if(ls_string[j]=='T') {
+                    cout<<"after branch\n";
+                    tr.get_transform().print();
+                }
+                if(i==0){
+     //               cout<<"transform: "<<ls_string[j]<<endl;
+       //             transform.print();
+         //           cout<<endl;
+                }
             }
         }
+        cout<<"------"<<endl;
 		
 	
 		SDL_RenderPresent(renderer);
